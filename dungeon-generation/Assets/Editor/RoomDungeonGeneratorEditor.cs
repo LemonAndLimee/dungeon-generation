@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(AbstractDungeonGenerator), true)]
-public class DungeonGeneratorEditor : Editor
+[CustomEditor(typeof(RoomsDungeonGenerator), true)]
+public class RoomDungeonGeneratorEditor : Editor
 {
-    AbstractDungeonGenerator generator;
+    RoomsDungeonGenerator generator;
 
     private void Awake()
     {
-        generator = (AbstractDungeonGenerator)target;
+        generator = (RoomsDungeonGenerator)target;
     }
 
     public override void OnInspectorGUI()
@@ -24,5 +24,10 @@ public class DungeonGeneratorEditor : Editor
         {
             generator.Clear();
         }
+        if (GUILayout.Button("Add Room"))
+        {
+            generator.AddNewRoom();
+        }
+        
     }
 }
