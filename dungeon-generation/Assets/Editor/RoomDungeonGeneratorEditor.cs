@@ -26,7 +26,7 @@ public class RoomDungeonGeneratorEditor : Editor
         }
         if (GUILayout.Button("Add Room"))
         {
-            generator.AddNewRoom();
+            generator.GenerateNewRoom();
         }
         
     }

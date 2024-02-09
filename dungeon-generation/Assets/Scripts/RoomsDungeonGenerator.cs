@@ -16,85 +16,172 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
     private HashSet<Vector2Int> floorPositions = new HashSet<Vector2Int>();
     private HashSet<Vector2Int> doorPositions = new HashSet<Vector2Int>();
 
+    private HashSet<Vector2Int> usedDoorPositions = new HashSet<Vector2Int>();
+
     protected override void RunProceduralGeneration()
     {
         Clear();
         for (int i = 0; i < numberOfRooms; i++)
         {
-            AddNewRoom();
+            GenerateNewRoom();
         }
+        AddWalls();
+    }
+
+    public override void Clear()
+    {
+        floorPositions.Clear();
+        doorPositions.Clear();
+        usedDoorPositions.Clear();
+        tilemapVisualiser.Clear();
+    }
+
+    private void AddWalls()
+    {
         HashSet<Vector2Int> floorAndDoorPositions = new HashSet<Vector2Int>(floorPositions);
-        floorAndDoorPositions.UnionWith(doorPositions);
+        floorAndDoorPositions.UnionWith(usedDoorPositions);
         WallGenerator.CreateWalls(floorAndDoorPositions, tilemapVisualiser);
     }
 
-    public void AddNewRoom()
+    public void GenerateNewRoom()
     {
         if (floorPositions.Count > 0)
         {
-            HashSet<Vector2Int> untriedDoors = new HashSet<Vector2Int>(doorPositions);
-            while (untriedDoors.Count > 0)
+            try
             {
-                Vector2Int randomTargetDoor = untriedDoors.ElementAt(Random.Range(0, untriedDoors.Count));
-
-                HashSet<RoomData> untriedRoomDatas = new HashSet<RoomData>(roomParametersList);
-                while (untriedRoomDatas.Count > 0)
-                {
-                    RoomData randomRoomData = untriedRoomDatas.ElementAt(Random.Range(0, untriedRoomDatas.Count));
-
-                    HashSet<Vector2Int> untriedRoomDoors = new HashSet<Vector2Int>(randomRoomData.doors);
-                    while (untriedRoomDoors.Count > 0)
-                    {
-                        Vector2Int randomRoomDoor = untriedRoomDoors.ElementAt(Random.Range(0, untriedRoomDoors.Count));
-                        HashSet<Vector2Int> currentRoomFloorPositions = GetFloorPositions(randomRoomData.floors, Vector2Int.zero, 0);
-                        (bool status, int rotation, Vector2Int translation) requiredTransformation = MapDoorToDoor(randomRoomDoor, currentRoomFloorPositions, randomTargetDoor);
-
-                        if (requiredTransformation.status == true)
-                        {
-                            if (CreateRoom(randomRoomData, requiredTransformation.translation, requiredTransformation.rotation) == 0)
-                            {
-                                return;
-                            }
-                        }
-                        untriedRoomDoors.Remove(randomRoomDoor);
-                    }
-
-                    untriedRoomDatas.Remove(randomRoomData);
-                }
-
-                untriedDoors.Remove(randomTargetDoor);
+                AddRandomRoom();
+                return;
+            }
+            catch
+            {
+                Debug.LogError("No new room can be added.");
             }
         }
         else
         {
-            CreateRoom(startRoom, Vector2Int.zero, 0);
-        }
+            PaintNewRoom(startRoom, new RoomTransformation(0, Vector2Int.zero));
+        }   
     }
 
-    private (bool status, int rotation, Vector2Int translation) MapDoorToDoor(Vector2Int localDoorPosition, IEnumerable<Vector2Int> localFloorPositions, Vector2Int targetDoor)
+    private void AddRandomRoom()
     {
-        (bool status, int rotation, Vector2Int translation) transformation = (false, 0, Vector2Int.zero);
-
-        Vector2Int localDoorDirection = GetDoorDirection(localDoorPosition, localFloorPositions);
-        Vector2Int targetDoorDirection = GetDoorDirection(targetDoor, floorPositions);
-
-        if (localDoorDirection == Vector2Int.zero || targetDoor == Vector2Int.zero)
+        HashSet<Vector2Int> untriedDoors = new HashSet<Vector2Int>(doorPositions);
+        untriedDoors.ExceptWith(usedDoorPositions);
+        while (untriedDoors.Count > 0)
         {
-            return transformation;
+            Vector2Int randomTargetDoor = untriedDoors.ElementAt(Random.Range(0, untriedDoors.Count));
+            try
+            {
+                AddRandomRoomToDoorOnMap(randomTargetDoor);
+                return;
+            }
+            catch
+            {
+                untriedDoors.Remove(randomTargetDoor);
+            }
+        }
+        throw new System.Exception("No valid space for a new room.");
+    }
+
+    private void AddRandomRoomToDoorOnMap(Vector2Int mapDoor)
+    {
+        HashSet<RoomData> untriedRoomDatas = new HashSet<RoomData>(roomParametersList);
+        while (untriedRoomDatas.Count > 0)
+        {
+            RoomData randomRoomData = untriedRoomDatas.ElementAt(Random.Range(0, untriedRoomDatas.Count));
+
+            try
+            {
+                AddRandomRoomFromRoomData(mapDoor, randomRoomData);
+                return;
+            }
+            catch
+            {
+                untriedRoomDatas.Remove(randomRoomData);
+            }
+        }
+        throw new System.Exception("No valid RoomData found.");
+    }
+
+    private void AddRandomRoomFromRoomData(Vector2Int mapDoor, RoomData roomData)
+    {
+        HashSet<Vector2Int> untriedRoomDoors = new HashSet<Vector2Int>(roomData.doors);
+        while (untriedRoomDoors.Count > 0)
+        {
+            Vector2Int randomRoomDoor = untriedRoomDoors.ElementAt(Random.Range(0, untriedRoomDoors.Count));
+
+            RoomTransformation requiredTransformation = MapDoorToDoor(randomRoomDoor, roomData, mapDoor);
+            HashSet<Vector2Int> transformedRoomFloorPositions = GetRoomFloorPositions(roomData.floors, requiredTransformation);
+            if (CheckIfNewRoomOverlaps(transformedRoomFloorPositions) == true)
+            {
+                untriedRoomDoors.Remove(randomRoomDoor);
+            }
+            else
+            {
+                PaintNewRoom(roomData, requiredTransformation);
+                AddUsedDoorTile(mapDoor);
+                return;
+            }
+        }
+        throw new System.Exception("No valid room door found.");
+    }
+
+    private bool CheckIfNewRoomOverlaps(HashSet<Vector2Int> roomFloor)
+    {
+        HashSet<Vector2Int> takenSpaces = GetExistingTakenPositions();
+        if (takenSpaces.Overlaps(roomFloor)) return true;
+        else return false;
+    }
+
+    private HashSet<Vector2Int> GetExistingTakenPositions()
+    {
+        HashSet<Vector2Int> takenSpaces = WallGenerator.FindWalls(floorPositions, Direction2D.cardinalDirectionsList);
+        takenSpaces.UnionWith(floorPositions);
+        return takenSpaces;
+    }
+
+    private void PaintNewRoom(RoomData roomData, RoomTransformation roomTransformation)
+    {
+        HashSet<Vector2Int> floor = GetRoomFloorPositions(roomData.floors, roomTransformation);
+        HashSet<Vector2Int> doors = GetRoomDoorPositions(roomData.doors, roomTransformation);
+
+        floorPositions.UnionWith(floor);
+        doorPositions.UnionWith(doors);
+
+        tilemapVisualiser.PaintFloorTiles(floor);
+    }
+
+    private void AddUsedDoorTile(Vector2Int door)
+    {
+        usedDoorPositions.Add(door);
+        tilemapVisualiser.PaintDoorTiles(usedDoorPositions);
+    }
+
+    private RoomTransformation MapDoorToDoor(Vector2Int localDoorPosition, RoomData roomData, Vector2Int targetDoor)
+    {
+        RoomTransformation transformation = new RoomTransformation();
+        Vector2Int localDoorDirection, targetDoorDirection;
+        HashSet<Vector2Int> localFloorPositions = GetRoomFloorPositions(roomData.floors, new RoomTransformation(0, Vector2Int.zero));
+        try
+        {
+            localDoorDirection = GetDoorDirection(localDoorPosition, localFloorPositions);
+            targetDoorDirection = GetDoorDirection(targetDoor, floorPositions);
+        }
+        catch
+        {
+            throw new System.Exception("Both doors must be connected to a floor.");
         }
 
-        int requiredRotation = Direction2D.GetAngleBetweenVectors(localDoorDirection, -targetDoorDirection);
-        print("     local door dir, target door dir = " + localDoorDirection.ToString() + "  " + targetDoorDirection.ToString());
-        print("     local to -target = " + requiredRotation.ToString());
 
-        Vector2Int newDoorPosition = targetDoor + targetDoorDirection;
+        int requiredRotation = Direction2D.GetAngleBetweenVectors(localDoorDirection, -targetDoorDirection);
+
+        Vector2Int newDoorPosition = targetDoor;
         Vector2Int rotatedLocalDoorPosition = Direction2D.Rotate(localDoorPosition, requiredRotation);
         Vector2Int requiredTranslation = newDoorPosition - rotatedLocalDoorPosition;
 
         transformation.rotation = requiredRotation;
         transformation.translation = requiredTranslation;
 
-        transformation.status = true;
         return transformation;
     }
 
@@ -107,52 +194,28 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
                 return direction * -1;
             }
         }
-        return Vector2Int.zero;
+        throw new System.Exception("Door is not connected to a floor.");
     }
 
-    private int CreateRoom(RoomData roomData, Vector2Int roomStartPosition, int roomRotation)
-    {
-        HashSet<Vector2Int> floor = GetFloorPositions(roomData.floors, roomStartPosition, roomRotation);
-        HashSet<Vector2Int> doors = GetDoorPositions(roomData.doors, roomStartPosition, roomRotation);
-
-        if (floorPositions.Overlaps(floor))
-        {
-            return -1;
-        }
-        floorPositions.UnionWith(floor);
-        doorPositions.UnionWith(doors);
-
-        tilemapVisualiser.PaintFloorTiles(floor);
-        tilemapVisualiser.PaintDoorTiles(doors);
-        return 0;
-    }
-
-    public override void Clear()
-    {
-        floorPositions.Clear();
-        doorPositions.Clear();
-        tilemapVisualiser.Clear();
-    }
-
-    private HashSet<Vector2Int> GetDoorPositions(IEnumerable<Vector2Int> localDoorPositions, Vector2Int roomStartPosition, int roomRotation)
+    private HashSet<Vector2Int> GetRoomDoorPositions(IEnumerable<Vector2Int> localDoorPositions, RoomTransformation roomTransformation)
     {
         HashSet<Vector2Int> doorPositions = new HashSet<Vector2Int>();
         foreach (var door in localDoorPositions)
         {
-            if (roomRotation != 0)
+            if (roomTransformation.rotation != 0)
             {
-                Vector2Int rotatedPosition = Direction2D.Rotate(door, roomRotation);
-                doorPositions.Add(roomStartPosition + rotatedPosition);
+                Vector2Int rotatedPosition = Direction2D.Rotate(door, roomTransformation.rotation);
+                doorPositions.Add(roomTransformation.translation + rotatedPosition);
             }
             else
             {
-                doorPositions.Add(roomStartPosition + door);
+                doorPositions.Add(roomTransformation.translation + door);
             }
         }
         return doorPositions;
     }
 
-    private HashSet<Vector2Int> GetFloorPositions(IEnumerable<BoundsInt> boundsList, Vector2Int roomStartPosition, int roomRotation)
+    private HashSet<Vector2Int> GetRoomFloorPositions(IEnumerable<BoundsInt> boundsList, RoomTransformation roomTransformation)
     {
         HashSet<Vector2Int> floor = new HashSet<Vector2Int>();
         foreach (var bound in boundsList)
@@ -162,14 +225,14 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
                 for (int col = 0; col < bound.size.x; col++)
                 {
                     Vector2Int position = (Vector2Int)bound.min + new Vector2Int(col, row);
-                    if (roomRotation != 0)
+                    if (roomTransformation.rotation != 0)
                     {
-                        Vector2Int rotatedPosition = Direction2D.Rotate(position, roomRotation);
-                        floor.Add(roomStartPosition + rotatedPosition);
+                        Vector2Int rotatedPosition = Direction2D.Rotate(position, roomTransformation.rotation);
+                        floor.Add(roomTransformation.translation + rotatedPosition);
                     }
                     else
                     {
-                        floor.Add(roomStartPosition + position);
+                        floor.Add(roomTransformation.translation + position);
                     }
                 }
             }
@@ -177,4 +240,16 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         return floor;
     }
 
+}
+
+struct RoomTransformation
+{
+    public int rotation;
+    public Vector2Int translation;
+
+    public RoomTransformation(int rotation, Vector2Int translation)
+    {
+        this.rotation = rotation;
+        this.translation = translation;
+    }
 }

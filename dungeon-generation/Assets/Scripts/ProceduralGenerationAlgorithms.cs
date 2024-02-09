@@ -31,6 +31,18 @@ public static class Direction2D
         Vector2Int.left
     };
 
+    public static List<Vector2Int> cardinalDirectionsListWithDiagonals = new List<Vector2Int>
+    {
+        Vector2Int.up,
+        new Vector2Int(1, 1),
+        Vector2Int.right,
+        new Vector2Int(1, -1),
+        Vector2Int.down,
+        new Vector2Int(-1, -1),
+        Vector2Int.left,
+        new Vector2Int(-1, 1)
+    };
+
     public static Vector2Int GetRandomCardinalDirection()
     {
         return cardinalDirectionsList[Random.Range(0, cardinalDirectionsList.Count)];

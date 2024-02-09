@@ -10,13 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 37bbb03107b660c4daa7fa28ffb141a2, type: 3}
-  m_Name: MessingAround
+  m_Name: GapRoom
   m_EditorClassIdentifier: 
-  doors: []
+  doors:
+  - {x: 1, y: -1}
+  - {x: -1, y: 1}
+  - {x: 3, y: 1}
+  - {x: 1, y: 6}
+  - {x: -1, y: 4}
+  - {x: 3, y: 4}
   floors:
-  - m_Position: {x: 0, y: 0, z: 0}
-    m_Size: {x: 30, y: 20, z: 0}
-  - m_Position: {x: 30, y: 0, z: 0}
-    m_Size: {x: 10, y: 40, z: 0}
-  - m_Position: {x: 0, y: 30, z: 0}
-    m_Size: {x: 30, y: 10, z: 0}
+  - m_Position: {x: 1, y: 0, z: 0}
+    m_Size: {x: 1, y: 6, z: 0}
+  - m_Position: {x: 0, y: 1, z: 0}
+    m_Size: {x: 3, y: 1, z: 0}
+  - m_Position: {x: 0, y: 4, z: 0}
+    m_Size: {x: 3, y: 1, z: 0}
