@@ -18,6 +18,8 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
 
     private HashSet<Vector2Int> usedDoorPositions = new HashSet<Vector2Int>();
 
+    private HashSet<PotentialRoomCombination> alreadyCheckedPotentialRooms = new HashSet<PotentialRoomCombination>();
+
     protected override void RunProceduralGeneration()
     {
         Clear();
@@ -49,7 +51,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         {
             try
             {
-                AddRandomRoom();
+                AddRandomRoomToMap();
                 return;
             }
             catch
@@ -63,7 +65,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         }   
     }
 
-    private void AddRandomRoom()
+    private void AddRandomRoomToMap()
     {
         HashSet<Vector2Int> untriedDoors = new HashSet<Vector2Int>(doorPositions);
         untriedDoors.ExceptWith(usedDoorPositions);
@@ -89,21 +91,26 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         while (untriedRoomDatas.Count > 0)
         {
             RoomData randomRoomData = untriedRoomDatas.ElementAt(Random.Range(0, untriedRoomDatas.Count));
+            PotentialRoomCombination roomCombination = new PotentialRoomCombination(mapDoor, randomRoomData);
+            if (!alreadyCheckedPotentialRooms.Contains(roomCombination))
+            {
+                try
+                {
+                    AddRandomRoomToMapFromRoomData(mapDoor, randomRoomData);
+                    return;
+                }
+                catch
+                {
+                    alreadyCheckedPotentialRooms.Add(roomCombination);
+                }
+            }
 
-            try
-            {
-                AddRandomRoomFromRoomData(mapDoor, randomRoomData);
-                return;
-            }
-            catch
-            {
-                untriedRoomDatas.Remove(randomRoomData);
-            }
+            untriedRoomDatas.Remove(randomRoomData);
         }
         throw new System.Exception("No valid RoomData found.");
     }
 
-    private void AddRandomRoomFromRoomData(Vector2Int mapDoor, RoomData roomData)
+    private void AddRandomRoomToMapFromRoomData(Vector2Int mapDoor, RoomData roomData)
     {
         HashSet<Vector2Int> untriedRoomDoors = new HashSet<Vector2Int>(roomData.doors);
         while (untriedRoomDoors.Count > 0)
@@ -251,5 +258,18 @@ struct RoomTransformation
     {
         this.rotation = rotation;
         this.translation = translation;
+    }
+}
+
+// used for storing combinations already tried
+struct PotentialRoomCombination
+{
+    public Vector2Int doorConnectedTo;
+    public RoomData roomData;
+
+    public PotentialRoomCombination(Vector2Int doorConnectedTo, RoomData roomData)
+    {
+        this.doorConnectedTo = doorConnectedTo;
+        this.roomData = roomData;
     }
 }
