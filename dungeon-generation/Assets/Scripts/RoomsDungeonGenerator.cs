@@ -6,17 +6,17 @@ using System.Linq;
 public class RoomsDungeonGenerator : AbstractDungeonGenerator
 {
     [SerializeField]
-    private RoomData startRoom;
+    protected RoomData startRoom;
     [SerializeField]
     private List<RoomData> roomParametersList;
 
     [SerializeField]
-    private int numberOfRooms;
+    protected int numberOfRooms;
 
-    private HashSet<Vector2Int> floorPositions = new HashSet<Vector2Int>();
-    private HashSet<Vector2Int> doorPositions = new HashSet<Vector2Int>();
+    protected HashSet<Vector2Int> floorPositions = new HashSet<Vector2Int>();
+    protected HashSet<Vector2Int> doorPositions = new HashSet<Vector2Int>();
 
-    private HashSet<Vector2Int> usedDoorPositions = new HashSet<Vector2Int>();
+    protected HashSet<Vector2Int> usedDoorPositions = new HashSet<Vector2Int>();
 
     private HashSet<PotentialRoomCombination> alreadyCheckedPotentialRooms = new HashSet<PotentialRoomCombination>();
 
@@ -28,6 +28,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
             GenerateNewRoom();
         }
         AddWalls();
+
     }
 
     public override void Clear()
@@ -38,7 +39,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         tilemapVisualiser.Clear();
     }
 
-    private void AddWalls()
+    protected void AddWalls()
     {
         HashSet<Vector2Int> floorAndDoorPositions = new HashSet<Vector2Int>(floorPositions);
         floorAndDoorPositions.UnionWith(usedDoorPositions);
@@ -140,7 +141,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         else return false;
     }
 
-    private HashSet<Vector2Int> GetExistingTakenPositions()
+    protected HashSet<Vector2Int> GetExistingTakenPositions()
     {
         HashSet<Vector2Int> takenSpaces = WallGenerator.FindWalls(floorPositions, Direction2D.cardinalDirectionsList);
         takenSpaces.UnionWith(floorPositions);
@@ -152,13 +153,18 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         HashSet<Vector2Int> floor = GetRoomFloorPositions(roomData.floors, roomTransformation);
         HashSet<Vector2Int> doors = GetRoomDoorPositions(roomData.doors, roomTransformation);
 
+        PaintNewStructure(floor, doors);
+    }
+
+    protected void PaintNewStructure(HashSet<Vector2Int> floor, HashSet<Vector2Int> doors)
+    {
         floorPositions.UnionWith(floor);
         doorPositions.UnionWith(doors);
 
         tilemapVisualiser.PaintFloorTiles(floor);
     }
 
-    private void AddUsedDoorTile(Vector2Int door)
+    protected void AddUsedDoorTile(Vector2Int door)
     {
         usedDoorPositions.Add(door);
         tilemapVisualiser.PaintDoorTiles(usedDoorPositions);
@@ -192,7 +198,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         return transformation;
     }
 
-    private Vector2Int GetDoorDirection(Vector2Int door, IEnumerable<Vector2Int> floorPositionsToConsider)
+    protected Vector2Int GetDoorDirection(Vector2Int door, IEnumerable<Vector2Int> floorPositionsToConsider)
     {
         foreach (var direction in Direction2D.cardinalDirectionsList)
         {

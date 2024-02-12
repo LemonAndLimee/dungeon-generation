@@ -211,6 +211,62 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &639756564
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 639756565}
+  - component: {fileID: 639756566}
+  m_Layer: 0
+  m_Name: MixedDungeonGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &639756565
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 639756564}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &639756566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 639756564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54a4bb8a9fc3af849a5a3cb4c1651f27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tilemapVisualiser: {fileID: 1181978358}
+  startPosition: {x: 0, y: 0}
+  startRoom: {fileID: 11400000, guid: 3b64db972a740e940bbd543b00e256e2, type: 2}
+  roomParametersList:
+  - {fileID: 11400000, guid: 0ae709aa4b957b7478847448df07e541, type: 2}
+  - {fileID: 11400000, guid: de2eb5e481533a442acdf1ce6d646892, type: 2}
+  - {fileID: 11400000, guid: 59558d1e380593648b8053dde81c07fb, type: 2}
+  - {fileID: 11400000, guid: e05d5e16dbef3804cb7d5e90d09237d4, type: 2}
+  - {fileID: 11400000, guid: 502721d7190000e49a8ea34b2052e764, type: 2}
+  numberOfRooms: 5
+  corridorLength: 3
+  corridorCount: 20
 --- !u!1 &726795827
 GameObject:
   m_ObjectHideFlags: 0
@@ -785,3 +841,4 @@ SceneRoots:
   - {fileID: 1181978359}
   - {fileID: 726795829}
   - {fileID: 1968074226}
+  - {fileID: 639756565}

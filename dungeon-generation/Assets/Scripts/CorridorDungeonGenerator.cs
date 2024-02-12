@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static CorridorGenerationAlgorithms;
 
 public class CorridorDungeonGenerator : AbstractDungeonGenerator
 {
@@ -10,21 +11,8 @@ public class CorridorDungeonGenerator : AbstractDungeonGenerator
 
     protected override void RunProceduralGeneration()
     {
-        CreateCorridors();
-    }
-
-    private void CreateCorridors()
-    {
-        HashSet<Vector2Int> floorPositions = new HashSet<Vector2Int>();
-
-        var currentPosition = startPosition;
-        for (int i = 0; i < corridorCount; i++)
-        {
-            var corridor = ProceduralGenerationAlgorithms.SimpleRandomWalkCorridor(currentPosition, corridorLength);
-            currentPosition = corridor[corridor.Count - 1];
-            floorPositions.UnionWith(corridor);
-        }
-
+        CorridorProperties corridorProperties = new CorridorProperties(startPosition, corridorLength, corridorCount);
+        HashSet<Vector2Int> floorPositions = CreateCorridors(corridorProperties, new HashSet<Vector2Int>());
         tilemapVisualiser.PaintFloorTiles(floorPositions);
     }
 }
