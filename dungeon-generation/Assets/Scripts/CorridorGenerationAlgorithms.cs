@@ -16,17 +16,13 @@ public static class CorridorGenerationAlgorithms
             var currentPosition = corridorProperties.corridorStartPosition;
             corridor.Add(currentPosition);
 
-            bool isValidCorridor = true;
             for (int i = 0; i < corridorProperties.corridorLength; i++)
             {
                 currentPosition += direction;
-                if (positionsToAvoid.Contains(currentPosition))
-                {
-                    isValidCorridor = false;
-                    break;
-                }
                 corridor.Add(currentPosition);
             }
+
+            bool isValidCorridor = CheckIfCorridorIsValid(corridorProperties, corridor, positionsToAvoid);
 
             if (isValidCorridor)
             {
@@ -40,6 +36,20 @@ public static class CorridorGenerationAlgorithms
         throw new System.Exception("No valid random walk corridor direction.");
     }
 
+    private static bool CheckIfCorridorIsValid(CorridorProperties corridorProperties, IEnumerable<Vector2Int> generatedCorridor, HashSet<Vector2Int> positionsToAvoid)
+    {
+        foreach (var position in generatedCorridor)
+        {
+            if (positionsToAvoid.Contains(position)) return false;
+            if (corridorProperties.hasYLimit)
+            {
+                if (position.y < corridorProperties.inclusiveMinimumY) return false;
+            }
+        }
+
+        return true;
+    }
+
     public static HashSet<Vector2Int> CreateCorridors(CorridorProperties corridorProperties, HashSet<Vector2Int> positionsToAvoid)
     {
         HashSet<Vector2Int> floorPositions = new HashSet<Vector2Int>();
@@ -47,15 +57,23 @@ public static class CorridorGenerationAlgorithms
         var currentPosition = corridorProperties.corridorStartPosition;
         for (int i = 0; i < corridorProperties.corridorCount; i++)
         {
-            var corridor = SimpleRandomWalkCorridor(corridorProperties, positionsToAvoid);
+            try
+            {
+                var corridor = SimpleRandomWalkCorridor(corridorProperties, positionsToAvoid);
 
-            currentPosition = corridor[corridor.Count - 1];
-            corridorProperties.corridorStartPosition = currentPosition;
-            floorPositions.UnionWith(corridor);
+                currentPosition = corridor[corridor.Count - 1];
+                corridorProperties.corridorStartPosition = currentPosition;
+                floorPositions.UnionWith(corridor);
+            }
+            catch
+            {
+                throw new System.Exception("Invalid corridor properties.");
+            }
         }
 
         return floorPositions;
     }
+
 
     public static HashSet<Vector2Int> GetCorridorDoors(CorridorProperties corridorProperties, HashSet<Vector2Int> corridorFloorPositions)
     {
@@ -87,11 +105,27 @@ public static class CorridorGenerationAlgorithms
         public int corridorLength;
         public int corridorCount;
 
+        public bool hasYLimit;
+        public int inclusiveMinimumY;
+
         public CorridorProperties(Vector2Int corridorStartPosition, int corridorLength, int corridorCount)
         {
             this.corridorStartPosition = corridorStartPosition;
             this.corridorLength = corridorLength;
             this.corridorCount = corridorCount;
+
+            hasYLimit = false;
+            inclusiveMinimumY = 0;
+        }
+
+        public CorridorProperties(Vector2Int corridorStartPosition, int corridorLength, int corridorCount, int inclusiveMinimumY)
+        {
+            this.corridorStartPosition = corridorStartPosition;
+            this.corridorLength = corridorLength;
+            this.corridorCount = corridorCount;
+
+            this.hasYLimit = true;
+            this.inclusiveMinimumY = inclusiveMinimumY;
         }
     }
 }

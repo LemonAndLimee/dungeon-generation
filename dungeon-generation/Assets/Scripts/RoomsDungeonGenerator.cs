@@ -13,6 +13,9 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
     [SerializeField]
     protected int numberOfRooms;
 
+    [SerializeField]
+    protected int inclusiveLowerLimitY;
+
     protected HashSet<Vector2Int> floorPositions = new HashSet<Vector2Int>();
     protected HashSet<Vector2Int> doorPositions = new HashSet<Vector2Int>();
 
@@ -120,7 +123,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
 
             RoomTransformation requiredTransformation = MapDoorToDoor(randomRoomDoor, roomData, mapDoor);
             HashSet<Vector2Int> transformedRoomFloorPositions = GetRoomFloorPositions(roomData.floors, requiredTransformation);
-            if (CheckIfNewRoomOverlaps(transformedRoomFloorPositions) == true)
+            if (CheckIfNewRoomIsValid(transformedRoomFloorPositions) == false)
             {
                 untriedRoomDoors.Remove(randomRoomDoor);
             }
@@ -132,6 +135,15 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
             }
         }
         throw new System.Exception("No valid room door found.");
+    }
+
+    private bool CheckIfNewRoomIsValid(HashSet<Vector2Int> roomFloor)
+    {
+        foreach (var position in roomFloor)
+        {
+            if (position.y < inclusiveLowerLimitY) return false;
+        }
+        return !CheckIfNewRoomOverlaps(roomFloor);
     }
 
     private bool CheckIfNewRoomOverlaps(HashSet<Vector2Int> roomFloor)

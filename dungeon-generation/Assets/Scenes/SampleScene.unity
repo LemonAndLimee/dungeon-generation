@@ -264,9 +264,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 59558d1e380593648b8053dde81c07fb, type: 2}
   - {fileID: 11400000, guid: e05d5e16dbef3804cb7d5e90d09237d4, type: 2}
   - {fileID: 11400000, guid: 502721d7190000e49a8ea34b2052e764, type: 2}
-  numberOfRooms: 5
+  numberOfRooms: 30
+  inclusiveLowerLimitY: -1
   corridorLength: 3
-  corridorCount: 20
+  corridorCount: 150
 --- !u!1 &726795827
 GameObject:
   m_ObjectHideFlags: 0
@@ -817,6 +818,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 502721d7190000e49a8ea34b2052e764, type: 2}
   - {fileID: 11400000, guid: de2eb5e481533a442acdf1ce6d646892, type: 2}
   numberOfRooms: 10
+  inclusiveLowerLimitY: 0
 --- !u!4 &1968074226
 Transform:
   m_ObjectHideFlags: 0
