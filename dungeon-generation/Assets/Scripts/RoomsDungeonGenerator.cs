@@ -16,6 +16,9 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
     [SerializeField]
     protected int inclusiveLowerLimitY;
 
+    [SerializeField]
+    private float percentageOfCoincidentalDoorsAdded;
+
     protected HashSet<Vector2Int> floorPositions = new HashSet<Vector2Int>();
     protected HashSet<Vector2Int> doorPositions = new HashSet<Vector2Int>();
 
@@ -100,7 +103,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
             {
                 try
                 {
-                    AddRandomRoomToMapFromRoomData(mapDoor, randomRoomData);
+                    AddRoomToDoorOnMapFromRoomData(mapDoor, randomRoomData);
                     return;
                 }
                 catch
@@ -114,7 +117,7 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         throw new System.Exception("No valid RoomData found.");
     }
 
-    private void AddRandomRoomToMapFromRoomData(Vector2Int mapDoor, RoomData roomData)
+    private void AddRoomToDoorOnMapFromRoomData(Vector2Int mapDoor, RoomData roomData)
     {
         HashSet<Vector2Int> untriedRoomDoors = new HashSet<Vector2Int>(roomData.doors);
         while (untriedRoomDoors.Count > 0)
@@ -129,8 +132,8 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
             }
             else
             {
-                PaintNewRoom(roomData, requiredTransformation);
-                AddUsedDoorTile(mapDoor);
+                RoomGenerationParameters roomGenerationParameters = new RoomGenerationParameters(mapDoor, requiredTransformation, roomData);
+                AddRoomToMapFromValidatedParameters(roomGenerationParameters);
                 return;
             }
         }
@@ -160,6 +163,38 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         return takenSpaces;
     }
 
+    private void AddRoomToMapFromValidatedParameters(RoomGenerationParameters generationParameters)
+    {
+        HashSet<Vector2Int> doors = GetRoomDoorPositions(generationParameters.roomData.doors, generationParameters.roomTransformation);
+        ProcessAdditionalDoorConnections(doors, generationParameters.connectedToDoorPosition);
+
+        PaintNewRoom(generationParameters.roomData, generationParameters.roomTransformation);
+        AddUsedDoorTile(generationParameters.connectedToDoorPosition);
+    }
+
+    private void ProcessAdditionalDoorConnections(IEnumerable<Vector2Int> currentDoorSet, Vector2Int doorToIgnore)
+    {
+        HashSet<Vector2Int> unusedDoors = new HashSet<Vector2Int>(doorPositions);
+        unusedDoors.ExceptWith(usedDoorPositions);
+
+        foreach (var door in currentDoorSet)
+        {
+            if (door != doorToIgnore && unusedDoors.Contains(door))
+            {
+                ProcessAdditionalDoor(door);
+            }
+        }
+    }
+
+    private void ProcessAdditionalDoor(Vector2Int door)
+    {
+        float randomFloat = Random.Range(0f, 1f);
+        if (randomFloat < percentageOfCoincidentalDoorsAdded)
+        {
+            AddUsedDoorTile(door);
+        }
+    }
+
     private void PaintNewRoom(RoomData roomData, RoomTransformation roomTransformation)
     {
         HashSet<Vector2Int> floor = GetRoomFloorPositions(roomData.floors, roomTransformation);
@@ -181,6 +216,10 @@ public class RoomsDungeonGenerator : AbstractDungeonGenerator
         usedDoorPositions.Add(door);
         tilemapVisualiser.PaintDoorTiles(usedDoorPositions);
     }
+
+    
+
+    
 
     private RoomTransformation MapDoorToDoor(Vector2Int localDoorPosition, RoomData roomData, Vector2Int targetDoor)
     {
@@ -288,6 +327,20 @@ struct PotentialRoomCombination
     public PotentialRoomCombination(Vector2Int doorConnectedTo, RoomData roomData)
     {
         this.doorConnectedTo = doorConnectedTo;
+        this.roomData = roomData;
+    }
+}
+
+struct RoomGenerationParameters
+{
+    public Vector2Int connectedToDoorPosition;
+    public RoomTransformation roomTransformation;
+    public RoomData roomData;
+
+    public RoomGenerationParameters(Vector2Int connectedToDoorPosition, RoomTransformation roomTransformation, RoomData roomData)
+    {
+        this.connectedToDoorPosition = connectedToDoorPosition;
+        this.roomTransformation = roomTransformation;
         this.roomData = roomData;
     }
 }
